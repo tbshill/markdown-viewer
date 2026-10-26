@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Test MarkdownCore
+        run: |
+          cd Packages/MarkdownCore
+          swift test
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build app and Quick Look extension
+        run: |
+          xcodebuild -project MarkdownViewer.xcodeproj \
+            -scheme MarkdownViewer \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGNING_REQUIRED=NO \
+            build
