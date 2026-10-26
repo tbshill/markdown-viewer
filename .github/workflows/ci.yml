@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,11 +23,23 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build app and Quick Look extension
+      - name: Build app and Quick Look extension (ad-hoc signed)
         run: |
           xcodebuild -project MarkdownViewer.xcodeproj \
             -scheme MarkdownViewer \
-            -configuration Debug \
+            -configuration Release \
+            -derivedDataPath build \
             CODE_SIGN_IDENTITY=- \
-            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM= \
             build
+
+      - name: Package app
+        run: |
+          cd build/Build/Products/Release
+          ditto -c -k --keepParent MarkdownViewer.app "$GITHUB_WORKSPACE/MarkdownViewer.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MarkdownViewer
+          path: MarkdownViewer.zip
